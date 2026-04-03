@@ -12,6 +12,7 @@
   "dependencies": {
     "@canva/app-ui-kit": "^5.7.0",
     "@canva/design": "^2.8.0",
+    "@canva/intents": "^2.4.0",
     "@canva/platform": "^2.2.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4"
