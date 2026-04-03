@@ -3,8 +3,12 @@ import react from '@vitejs/plugin-react';
 import mkcert from 'vite-plugin-mkcert';
 import cssInjectedByJsPlugin from 'vite-plugin-css-injected-by-js';
 
-export default defineConfig({
-  plugins: [react(), mkcert(), cssInjectedByJsPlugin()],
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    mode === 'development' ? mkcert() : null,
+    cssInjectedByJsPlugin()
+  ].filter(Boolean),
   define: {
     'process.env': {}
   },
@@ -20,4 +24,4 @@ export default defineConfig({
       }
     }
   }
-});
+}));
