@@ -82,7 +82,6 @@ export function App() {
   return (
     <div className="panel">
       <header className="panel-header">
-        <h1>CarouselForge</h1>
         <ModeToggle mode={mode} onChange={setMode} />
       </header>
 
