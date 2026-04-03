@@ -1,11 +1,13 @@
 import {
   addElementAtPoint,
   setCurrentPageBackground,
-  addPage
+  addPage,
+  getDefaultPageDimensions
 } from '@canva/design';
 import { DesignSpec, SlideSpec, GraphicElement } from './types';
 
-const CANVAS_SIZE = 1080; // All operations in 1080x1080 space
+// Default fallback, but we'll try to get real ones
+let DIMS = { width: 1080, height: 1080 };
 
 // Helper to map numeric weights to Canva Weight strings
 function mapWeight(weight: string | number): "normal" | "thin" | "extralight" | "light" | "medium" | "semibold" | "bold" | "ultrabold" | "heavy" {
@@ -20,9 +22,23 @@ function mapWeight(weight: string | number): "normal" | "thin" | "extralight" | 
   return 'normal';
 }
 
-// Convert percentage position to pixel values
-function pct(val: number): number {
-  return (val / 100) * CANVAS_SIZE;
+// Convert percentage position to pixel values based on REAL dimensions
+function getSafeRect(x: number, y: number, w: number, h: number, margin = 2) {
+  // 1. Convert percents to pixels
+  let targetX = (x / 100) * DIMS.width;
+  let targetY = (y / 100) * DIMS.height;
+  let targetW = (w / 100) * DIMS.width;
+  let targetH = (h / 100) * DIMS.height;
+
+  // 2. Clamp width/height to never exceed page
+  targetW = Math.min(targetW, DIMS.width - (margin * 2));
+  targetH = Math.min(targetH, DIMS.height - (margin * 2));
+
+  // 3. Constrain position to keep element inside
+  targetX = Math.max(margin, Math.min(targetX, DIMS.width - targetW - margin));
+  targetY = Math.max(margin, Math.min(targetY, DIMS.height - targetH - margin));
+
+  return { left: targetX, top: targetY, width: targetW, height: targetH };
 }
 
 export async function applyDesignToCanvas(
@@ -30,6 +46,12 @@ export async function applyDesignToCanvas(
   mode: 'restyle' | 'build',
   existingPageCount: number
 ): Promise<void> {
+  // Sync dimensions
+  const dims = await getDefaultPageDimensions();
+  if (dims) {
+    DIMS = { width: dims.width, height: dims.height };
+  }
+
   // Apply first slide to the current page
   if (spec.slides.length > 0) {
     await applySlide(spec, spec.slides[0]);
@@ -54,11 +76,15 @@ async function applySlideToCurrentPage(
   }
 
   if (slide.label && slide.layout.labelPosition) {
+    const rect = getSafeRect(
+      slide.layout.labelPosition.x,
+      slide.layout.labelPosition.y,
+      slide.layout.labelPosition.width,
+      10 // Approx height for label
+    );
     await addElementAtPoint({
       type: 'text',
-      top: pct(slide.layout.labelPosition.y),
-      left: pct(slide.layout.labelPosition.x),
-      width: pct(slide.layout.labelPosition.width),
+      ...rect,
       children: [slide.label],
       fontSize: 16,
       fontWeight: mapWeight(spec.typography.accent.fontWeight),
@@ -67,26 +93,35 @@ async function applySlideToCurrentPage(
     });
   }
 
+  // Heading - Needs safe height estimation
+  const hRect = getSafeRect(
+    slide.layout.headingPosition.x,
+    slide.layout.headingPosition.y,
+    slide.layout.headingPosition.width,
+    slide.layout.headingFontSize * 1.5 / 10 // rough estimate
+  );
   await addElementAtPoint({
     type: 'text',
-    top: pct(slide.layout.headingPosition.y),
-    left: pct(slide.layout.headingPosition.x),
-    width: pct(slide.layout.headingPosition.width),
+    ...hRect,
     children: [slide.heading],
-    fontSize: slide.layout.headingFontSize,
+    fontSize: Math.min(slide.layout.headingFontSize, 100), // SDK Max is 100
     fontWeight: mapWeight(spec.typography.heading.fontWeight),
     color: spec.palette.primary,
     textAlign: slide.layout.textAlign === 'left' ? 'start' : slide.layout.textAlign === 'right' ? 'end' : 'center',
   });
 
   if (slide.body && slide.layout.bodyPosition) {
+    const bRect = getSafeRect(
+      slide.layout.bodyPosition.x,
+      slide.layout.bodyPosition.y,
+      slide.layout.bodyPosition.width,
+      slide.layout.bodyFontSize * 5 / 10 // rough estimate for body block
+    );
     await addElementAtPoint({
       type: 'text',
-      top: pct(slide.layout.bodyPosition.y),
-      left: pct(slide.layout.bodyPosition.x),
-      width: pct(slide.layout.bodyPosition.width),
+      ...bRect,
       children: [slide.body],
-      fontSize: slide.layout.bodyFontSize,
+      fontSize: Math.min(slide.layout.bodyFontSize, 100),
       fontWeight: mapWeight(spec.typography.body.fontWeight),
       color: spec.palette.secondary,
       textAlign: slide.layout.textAlign === 'left' ? 'start' : slide.layout.textAlign === 'right' ? 'end' : 'center',
@@ -110,30 +145,25 @@ async function addGraphicElement(
     : el.color === 'primary' ? spec.palette.primary
     : spec.palette.secondary;
 
-  const x = pct(el.position.x);
-  const y = pct(el.position.y);
-  const w = pct(el.position.width);
+  const rect = getSafeRect(el.position.x, el.position.y, el.position.width, el.position.width);
 
   switch (el.type) {
     case 'horizontal_rule':
       await addElementAtPoint({
         type: 'shape',
-        top: y, left: x, width: w, height: 3,
-        viewBox: { top: 0, left: 0, width: w, height: 3 },
-        paths: [{ 
-          d: `M 0 1.5 L ${w} 1.5`, 
-          fill: { color },
-          stroke: { color, weight: 0.1 } // Small weight to simulate v1 stroke
-        }],
+        top: rect.top, left: rect.left, width: rect.width, height: 3,
+        viewBox: { top: 0, left: 0, width: rect.width, height: 3 },
+        paths: [{ d: `M 0 1.5 L ${rect.width} 1.5`, fill: { color }, stroke: { color, weight: 0.1 } }],
       });
       break;
 
     case 'side_bar':
+      const barW = (1.2 / 100) * DIMS.width;
       await addElementAtPoint({
         type: 'shape',
-        top: 0, left: x, width: pct(1.2), height: CANVAS_SIZE,
-        viewBox: { top: 0, left: 0, width: pct(1.2), height: CANVAS_SIZE },
-        paths: [{ d: `M 0 0 L ${pct(1.2)} 0 L ${pct(1.2)} ${CANVAS_SIZE} L 0 ${CANVAS_SIZE} Z`, fill: { color } }],
+        top: 0, left: rect.left, width: barW, height: DIMS.height,
+        viewBox: { top: 0, left: 0, width: barW, height: DIMS.height },
+        paths: [{ d: `M 0 0 L ${barW} 0 L ${barW} ${DIMS.height} L 0 ${DIMS.height} Z`, fill: { color } }],
       });
       break;
 
@@ -144,9 +174,10 @@ async function addGraphicElement(
     case 'slash_divider':
       await addElementAtPoint({
         type: 'shape',
-        top: y, left: x, width: w, height: w,
-        viewBox: { top: 0, left: 0, width: w, height: w },
-        paths: [{ d: `M 0 0 L ${w} 0 L ${w} ${w} L 0 ${w} Z`, fill: { color } }],
+        ...rect,
+        height: rect.width,
+        viewBox: { top: 0, left: 0, width: rect.width, height: rect.width },
+        paths: [{ d: `M 0 0 L ${rect.width} 0 L ${rect.width} ${rect.width} L 0 ${rect.width} Z`, fill: { color } }],
       });
       break;
   }
