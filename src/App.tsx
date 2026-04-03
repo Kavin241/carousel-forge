@@ -1,18 +1,27 @@
 import { useState, useEffect } from 'react';
+import {
+  Button,
+  FormField,
+  MultilineInput,
+  Rows,
+  SegmentedControl,
+  Text,
+  Title,
+  Alert,
+  LoadingIndicator,
+  Columns,
+  Column,
+  Box,
+} from '@canva/app-ui-kit';
 import { useCanvasReader } from './hooks/useCanvasReader';
 import { useGemini } from './hooks/useGemini';
 import { useDesignState } from './hooks/useDesignState';
-import { ModeToggle } from './components/ModeToggle';
-import { ScriptInput } from './components/ScriptInput';
-import { VibeInput } from './components/VibeInput';
-import { DesignPanel } from './components/DesignPanel';
-import { SlidePreview } from './components/SlidePreview';
-import { BuildButton } from './components/BuildButton';
-import { StatusBar } from './components/StatusBar';
 import { applyDesignToCanvas } from './lib/canvasWriter';
 
+type AppMode = 'build' | 'restyle';
+
 export function App() {
-  const [mode, setMode] = useState<'restyle' | 'build'>('build');
+  const [mode, setMode] = useState<AppMode>('build');
   const [script, setScript] = useState('');
   const [vibePrompt, setVibePrompt] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'ready' | 'building' | 'done' | 'error'>('idle');
@@ -22,7 +31,6 @@ export function App() {
   const { designSpec, generateDesign, shuffleElements } = useGemini();
   const { lockState, toggleLock } = useDesignState();
 
-  // Auto-detect mode on mount
   useEffect(() => {
     refreshSlides().then(slides => {
       if (slides && slides.some(s => s.textBlocks.length > 0)) {
@@ -50,23 +58,6 @@ export function App() {
     }
   };
 
-  const handleShuffle = async (target: keyof typeof lockState | 'all') => {
-    setStatus('loading');
-    try {
-      await shuffleElements(target, {
-        mode,
-        script: script || null,
-        vibePrompt: vibePrompt || null,
-        existingSlides: mode === 'restyle' ? extractedSlides : null,
-        lockedElements: lockState
-      });
-      setStatus('ready');
-    } catch (e: any) {
-      setStatus('error');
-      setErrorMessage(e.message);
-    }
-  };
-
   const handleBuild = async () => {
     if (!designSpec) return;
     setStatus('building');
@@ -80,53 +71,118 @@ export function App() {
   };
 
   return (
-    <div className="panel">
-      <header className="panel-header">
-        <ModeToggle mode={mode} onChange={setMode} />
-      </header>
-
-      {mode === 'restyle' && extractedSlides && (
-        <SlidePreview slides={extractedSlides} onToggle={toggleSlide} />
-      )}
-
-      <ScriptInput
-        value={script}
-        onChange={setScript}
-        mode={mode}
-        placeholder={mode === 'build'
-          ? 'Paste your script, a paragraph topic, or leave blank to generate fresh content...'
-          : 'Optional: paste any additional context or direction for this restyle...'
-        }
-      />
-
-      <VibeInput
-        value={vibePrompt}
-        onChange={setVibePrompt}
-        placeholder='Optional: describe a vibe (e.g. "dark and editorial", "warm and scrapbook", "clean notes app feel")...'
-      />
-
-      <button
-        className="generate-btn"
-        onClick={handleGenerate}
-        disabled={status === 'loading' || status === 'building'}
-      >
-        {status === 'loading' ? 'Generating...' : 'Generate Design'}
-      </button>
-
-      {designSpec && status !== 'loading' && (
-        <DesignPanel
-          spec={designSpec}
-          lockState={lockState}
-          onToggleLock={toggleLock}
-          onShuffle={handleShuffle}
+    <div style={{ padding: 12 }}>
+      <Rows spacing="2u">
+        {/* Mode Selector */}
+        <SegmentedControl
+          options={[
+            { label: 'Build', value: 'build' },
+            { label: 'Restyle', value: 'restyle' },
+          ]}
+          value={mode}
+          onChange={(value) => setMode(value as AppMode)}
         />
-      )}
 
-      {designSpec && status === 'ready' && (
-        <BuildButton onClick={handleBuild} />
-      )}
+        {/* Script Content */}
+        <FormField
+          label={mode === 'build' ? 'Script content' : 'Restyle context'}
+          description={
+            mode === 'build'
+              ? 'Paste raw text. AI auto-chunks it into slides.'
+              : 'Add direction for the restyle.'
+          }
+        >
+          <MultilineInput
+            value={script}
+            onChange={(value) => setScript(value)}
+            placeholder={
+              mode === 'build'
+                ? 'Paste your script, topic, or leave blank...'
+                : 'Optional: paste context or direction...'
+            }
+            minRows={3}
+            maxRows={6}
+          />
+        </FormField>
 
-      <StatusBar status={status} error={errorMessage} />
+        {/* Design Vibe */}
+        <FormField
+          label="Design vibe"
+          description="Guide the visual style. e.g. 'Dark and editorial'."
+        >
+          <MultilineInput
+            value={vibePrompt}
+            onChange={(value) => setVibePrompt(value)}
+            placeholder='e.g. "warm scrapbook", "clean notes app", "bold neon"...'
+            minRows={2}
+            maxRows={4}
+          />
+        </FormField>
+
+        {/* Generate Button */}
+        <Button
+          variant="primary"
+          onClick={handleGenerate}
+          disabled={status === 'loading' || status === 'building'}
+          stretch
+        >
+          {status === 'loading' ? 'Generating...' : 'Generate Design'}
+        </Button>
+
+        {/* Loading State */}
+        {status === 'loading' && (
+          <Rows spacing="1u">
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
+              <LoadingIndicator size="medium" />
+            </div>
+            <Text size="small" alignment="center" tone="tertiary">
+              AI is crafting your carousel...
+            </Text>
+          </Rows>
+        )}
+
+        {/* Design Ready */}
+        {designSpec && status === 'ready' && (
+          <Rows spacing="1.5u">
+            <Alert tone="positive">
+              Design generated! Review and apply it to your canvas.
+            </Alert>
+            <Button
+              variant="primary"
+              onClick={handleBuild}
+              stretch
+            >
+              Apply to Canvas
+            </Button>
+          </Rows>
+        )}
+
+        {/* Building State */}
+        {status === 'building' && (
+          <Rows spacing="1u">
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 0' }}>
+              <LoadingIndicator size="medium" />
+            </div>
+            <Text size="small" alignment="center" tone="tertiary">
+              Applying design to canvas...
+            </Text>
+          </Rows>
+        )}
+
+        {/* Done */}
+        {status === 'done' && (
+          <Alert tone="positive">
+            Carousel applied successfully!
+          </Alert>
+        )}
+
+        {/* Error */}
+        {status === 'error' && errorMessage && (
+          <Alert tone="critical">
+            {errorMessage}
+          </Alert>
+        )}
+      </Rows>
     </div>
   );
 }
