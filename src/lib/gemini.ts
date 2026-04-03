@@ -35,26 +35,31 @@ export async function parseDesignSpec(raw: string): Promise<DesignSpec> {
     .replace(/```\n?/g, '')
     .trim();
 
-  // Fix common Gemini JSON issues:
+  // FIX: Handle literal newlines inside strings which break JSON.parse
+  // This looks for newlines that are NOT preceded by a backslash but are inside double quotes.
+  // A simpler version: just replace all actual newlines with escaped ones if they appear between quotes.
+  cleaned = cleaned.replace(/"([^"]*)"/g, (match, content) => {
+    return '"' + content.replace(/\n/g, '\\n') + '"';
+  });
+
+  // Fix other common Gemini JSON issues:
   // 1. Remove trailing commas before } or ]
   cleaned = cleaned.replace(/,\s*([}\]])/g, '$1');
   // 2. Remove single-line comments
   cleaned = cleaned.replace(/\/\/[^\n]*/g, '');
-  // 3. Replace single quotes with double quotes (only around property names/values)
-  // This is risky for strings containing apostrophes, so only do it if initial parse fails.
 
   try {
     return JSON.parse(cleaned) as DesignSpec;
   } catch (firstError) {
-    // Second attempt: more aggressive cleanup
+    // Second attempt: more aggressive cleanup for single quotes used as delimiters
     try {
-      // Replace single-quoted strings with double-quoted
       const aggressive = cleaned
         .replace(/'/g, '"')
         .replace(/,\s*([}\]])/g, '$1');
       return JSON.parse(aggressive) as DesignSpec;
     } catch (secondError) {
-      throw new Error(`Failed to parse Gemini response as JSON: ${firstError}`);
+      console.error('Final JSON Parse Failure. Raw:', raw);
+      throw new Error(`Failed to parse Gemini response: ${firstError}`);
     }
   }
 }
