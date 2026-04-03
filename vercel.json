@@ -1,0 +1,11 @@
+{
+  "crons": [
+    {
+      "path": "/api/refresh-library",
+      "schedule": "0 0 * * 0"
+    }
+  ],
+  "env": {
+    "GEMINI_API_KEY": "@gemini_api_key"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "runtime": {
+    "permissions": [
+      {
+        "name": "canva:network:request",
+        "type": "mandatory",
+        "domains": [
+          "generativelanguage.googleapis.com"
+        ]
+      }
+    ]
+  }
+}
