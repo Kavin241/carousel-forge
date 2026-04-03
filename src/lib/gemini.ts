@@ -1,6 +1,6 @@
 import { DesignSpec } from './types';
 
-const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash';
+const GEMINI_MODEL = import.meta.env.VITE_GEMINI_MODEL || 'gemini-pro';
 
 export async function callGemini(prompt: string): Promise<string> {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;

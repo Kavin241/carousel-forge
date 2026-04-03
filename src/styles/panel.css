@@ -32,7 +32,7 @@ body {
 .panel-header {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
 }
 
 .panel-header h1 {
