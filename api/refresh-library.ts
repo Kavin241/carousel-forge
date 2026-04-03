@@ -1,4 +1,20 @@
-import { callGemini } from '../src/lib/gemini';
+const callGemini = async (prompt: string): Promise<string> => {
+  const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent`;
+  const response = await fetch(`${endpoint}?key=${apiKey}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.85, topK: 40, topP: 0.95, maxOutputTokens: 4096 }
+    })
+  });
+  if (!response.ok) throw new Error(`Gemini error: ${response.statusText}`);
+  const data = await response.json();
+  const raw = data.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!raw) throw new Error('Empty response from Gemini');
+  return raw;
+};
 
 const REFRESH_PROMPT = `
 You are a social media design trend analyst. Based on current viral carousel trends from Instagram, TikTok, and LinkedIn (educational content, as of 2025-2026), generate 3 new design vibe presets that are trending RIGHT NOW but not yet mainstream.
