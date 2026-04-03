@@ -24,7 +24,7 @@ export function ModeToggle({ mode, onChange }: ModeToggleProps) {
           Restyle
         </button>
       </div>
-      <InfoTooltip text="Build mode generates an entirely new set of carousel slides from scratch based on your script. Restyle mode reads the existing slides on your canvas and redesigns them without changing your text." />
+      <InfoTooltip text="Build: Generates brand new slides from text. Restyle: Redesigns current canvas slides without losing your text." />
     </div>
   );
 }

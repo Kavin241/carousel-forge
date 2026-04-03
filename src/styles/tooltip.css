@@ -29,18 +29,18 @@
 
 .info-tooltip-text {
   visibility: hidden;
-  width: 200px;
+  width: 185px;
   background-color: var(--surface);
   border: 1px solid var(--border);
   color: var(--text);
   text-align: left;
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 8px 10px;
   position: absolute;
-  z-index: 100;
-  bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
+  z-index: 1000;
+  top: 140%; /* Pop DOWN instead of UP to avoid iframe header clipping */
+  left: 0%; /* Align to icon's left to avoid left margin clipping */
+  transform: translateX(-15px); /* small shift to center slightly */
   opacity: 0;
   transition: opacity 0.2s;
   font-size: 11px;

@@ -14,7 +14,7 @@ export function ScriptInput({ value, onChange, mode, placeholder }: ScriptInputP
     <div className="input-group">
       <div className="input-header">
         <label>{mode === 'build' ? 'Script Content' : 'Restyle Context'}</label>
-        <InfoTooltip text={mode === 'build' ? "Paste the raw text you want to convert into a carousel. Our AI will automatically chunk it into perfectly sized slides." : "Describe any specific constraints (like 'Make it more professional' or 'Change tone to casual') to guide the AI restyle."} />
+        <InfoTooltip text={mode === 'build' ? "Paste raw text or notes. The AI auto-chunks it into carousel pages. Example: Paste a long LinkedIn post." : "Add rules for how to redesign the existing slides. Example: 'Use a more professional tone'."} />
       </div>
       <textarea
         value={value}

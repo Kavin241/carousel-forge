@@ -12,7 +12,7 @@ export function VibeInput({ value, onChange, placeholder }: VibeInputProps) {
     <div className="input-group">
       <div className="input-header">
         <label>Design Vibe</label>
-        <InfoTooltip text="Instruct the AI exactly how you want the design to look and feel. E.g. 'Use dark sleek colors', 'Make it look like a scrapbook', 'Use giant typography'." />
+        <InfoTooltip text="Guide the AI on visual style. Example: 'Dark sleek colors with large typography.'" />
       </div>
       <textarea
         value={value}
