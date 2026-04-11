@@ -5,7 +5,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"C:/Users/Kavin/AntiGravity Folders/CarouselForge/scripts/auto-log-and-push.sh\""
+            "command": "bash \"C:/Users/Kavin/AntiGravity Folders/CarouselForge/scripts/auto-log-and-push.sh\"",
+            "statusMessage": "Logging changes and pushing to GitHub..."
           }
         ]
       }

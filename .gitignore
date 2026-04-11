@@ -21,6 +21,9 @@ secrets.*
 *.key
 *.pem
 
+# Claude Code local settings (machine-specific, never commit)
+.claude/settings.local.json
+
 # Editor/OS
 .vscode/*
 !.vscode/extensions.json
