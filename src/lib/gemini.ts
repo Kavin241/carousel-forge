@@ -169,7 +169,8 @@ function validateSpec(spec: DesignSpec): DesignSpec {
     if (!slide.layout.headingPosition) {
       slide.layout.headingPosition = { x: 8, y: 30, width: 84 };
     }
-    // Clamp font sizes to Canva's 1-100 range
+    // Clamp font sizes. The prompt constrains AI output to 54-86 (heading) and 22-38 (body),
+    // so 100 is a safe validation ceiling. canvasWriter then multiplies by scale and clamps to 400.
     slide.layout.headingFontSize = Math.max(
       1,
       Math.min(100, slide.layout.headingFontSize || 64)

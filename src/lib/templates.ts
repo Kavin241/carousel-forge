@@ -11,9 +11,9 @@ export const MASTER_TEMPLATES: Record<string, DesignSpec> = {
       secondary: "#666666"
     },
     typography: {
-      heading: { fontFamily: "Inter", fontWeight: "700", letterSpacing: -0.02 },
-      body: { fontFamily: "Inter", fontWeight: "400", letterSpacing: 0 },
-      accent: { fontFamily: "Roboto Mono", fontWeight: "500", letterSpacing: 0.05 }
+      heading: { fontFamily: "Plus Jakarta Sans", fontWeight: "700", letterSpacing: -0.02 },
+      body: { fontFamily: "Plus Jakarta Sans", fontWeight: "400", letterSpacing: 0 },
+      accent: { fontFamily: "Space Mono", fontWeight: "400", letterSpacing: 0.05 }
     },
     backgroundStyle: "solid",
     layoutStyle: "left_heavy",

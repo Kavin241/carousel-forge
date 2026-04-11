@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"C:/Users/Kavin/AntiGravity Folders/CarouselForge/scripts/auto-log-and-push.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

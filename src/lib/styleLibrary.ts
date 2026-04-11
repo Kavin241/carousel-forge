@@ -109,7 +109,7 @@ export const BASE_VIBES: Partial<DesignSpec>[] = [
   },
   {
     vibeName: 'Gradient Glass',
-    palette: { background: '#0F0C29', primary: '#FFFFFF', accent: '#F64F59', secondary: 'rgba(255,255,255,0.6)' },
+    palette: { background: '#0F0C29', primary: '#FFFFFF', accent: '#F64F59', secondary: '#9F9EA9' },
     typography: {
       heading: { fontFamily: 'Urbanist', fontWeight: '900', letterSpacing: -0.03 },
       body: { fontFamily: 'Manrope', fontWeight: '400', letterSpacing: 0 },

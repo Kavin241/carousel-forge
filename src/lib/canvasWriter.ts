@@ -251,6 +251,28 @@ function buildGraphicShape(
     };
   }
 
+  if (el.type === "slash_divider") {
+    // Thin diagonal parallelogram rendered as a "/" slash across the element width.
+    // 20px fixed slant keeps it visually consistent regardless of element width.
+    const slant = 20;
+    const thickness = 3;
+    const h = slant + thickness;
+    return {
+      type: "shape" as const,
+      top: y,
+      left: x,
+      width: w,
+      height: h,
+      viewBox: { top: 0, left: 0, width: w, height: h },
+      paths: [
+        {
+          d: `M 0 0 L ${w - slant} 0 L ${w} ${h} L ${slant} ${h} Z`,
+          fill: { color },
+        },
+      ],
+    };
+  }
+
   // For circle_accent, dot_grid — approximate with a diamond shape
   // (Canva paths can't use arc commands reliably, so we use an octagon approximation)
   if (el.type === "circle_accent" || el.type === "dot_grid") {

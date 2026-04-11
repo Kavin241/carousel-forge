@@ -64,23 +64,6 @@ export interface GraphicElement {
   size: number;               // relative size unit
 }
 
-export interface ExtractedSlide {
-  pageIndex: number;
-  textBlocks: ExtractedTextBlock[];
-  include: boolean;           // user toggle
-  dimensions: { width: number; height: number };
-}
-
-export interface ExtractedTextBlock {
-  id: string;
-  text: string;
-  isHeading: boolean;         // detected by font size
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
 export interface DesignSystemPayload {
   activeDesign: DesignSpec;
   shuffleBanks: {

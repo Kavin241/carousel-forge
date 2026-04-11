@@ -65,3 +65,48 @@ This is a living log designed to provide complete context to any AI agent, devel
 ---
 
 *(Note to any AI reading this: Continue appending to the `Chronological Log` here whenever structural changes, new bugs, or strategic decisions occur.)*
+
+---
+
+### Phase 4: Codebase Audit & Automation Setup (April 11, 2026)
+**Author: Claude Code**
+
+**Premise:** Full code review of the post-pivot Canva SDK codebase. Six bugs were identified and fixed. A git-hook automation system was introduced so that all future changes are automatically documented here and pushed to GitHub without manual intervention.
+
+**Bugs Fixed:**
+
+1. **`slash_divider` shape missing in `canvasWriter.ts`**
+   - *Problem:* `buildGraphicShape()` had no case for `slash_divider`. The element silently fell through to the default rectangle shape, breaking the neon_creator template and Neon Maximalist BASE_VIBE visually.
+   - *Resolution:* Added a proper parallelogram path (`M 0 0 L w-20 0 L w 23 L 20 23 Z`) that renders a clean diagonal `/` slash across the element bounds. Fixed 20px slant keeps it consistent at any width.
+
+2. **Premature "Design applied!" alert in `app.tsx`**
+   - *Problem:* `status === "done"` was set after both generation AND canvas apply. This caused the success alert "Design applied! Check your canvas." to appear immediately after Gemini finished generating, before the user had pressed "Apply to Canvas."
+   - *Resolution:* Introduced a new `"generated"` status value. `handleGenerate` now sets `"generated"` on success; only `handleApplyToCanvas` sets `"done"`. The alert is gated to `wasApplied = status === "done"`.
+
+3. **Dead code in `types.ts`**
+   - *Problem:* `ExtractedSlide` and `ExtractedTextBlock` interfaces were leftovers from the old "read canvas" architecture abandoned in Phase 3. Nothing in the codebase imported them.
+   - *Resolution:* Removed both interfaces entirely.
+
+4. **Non-free fonts in `minimalist_notes` template (`templates.ts`)**
+   - *Problem:* The template used `Inter` (heading/body) and `Roboto Mono` (accent) — neither is in `CANVA_FREE_FONTS`. This created an inconsistency: Gemini is explicitly told it can only use fonts from the free list, but the preset template used fonts outside that list.
+   - *Resolution:* Replaced `Inter` → `Plus Jakarta Sans`, `Roboto Mono` → `Space Mono`. Both are visually equivalent and present in the free-font whitelist.
+
+5. **`rgba()` color in `styleLibrary.ts` Gradient Glass vibe**
+   - *Problem:* `secondary: 'rgba(255,255,255,0.6)'` in BASE_VIBES "Gradient Glass". Canva only accepts 6-digit hex colors. If BASE_VIBES is ever wired into the UI, this would silently corrupt the palette or crash the canvas writer.
+   - *Resolution:* Pre-blended rgba(255,255,255,0.6) over `#0F0C29` background to arrive at the equivalent solid hex `#9F9EA9`.
+
+6. **Misleading font-size clamp comment in `gemini.ts`**
+   - *Problem:* Comment said "Clamp font sizes to Canva's 1-100 range" but `clampFontSize()` in `canvasWriter.ts` actually caps at 400. The two-step pipeline was not documented.
+   - *Resolution:* Updated comment to explain both stages: validateSpec caps at 100 (matching AI prompt constraints of 54-86 heading / 22-38 body); canvasWriter multiplies by scale and then caps at 400.
+
+**Automation System Introduced:**
+
+- Created `scripts/auto-log-and-push.sh` — a bash script triggered by Claude Code's Stop hook.
+- Created `.claude/settings.json` — project-level Claude Code hook configuration.
+- **How it works:** After every Claude Code response that modifies source files, the script:
+  1. Detects changed files via `git status --porcelain`
+  2. Appends a timestamped entry to this log with attribution ("Claude Code" or "Anti Gravity")
+  3. Stages all changes, commits, and pushes to `origin/master`
+- **Attribution convention:**
+  - `Claude Code:` — changes committed automatically via the Stop hook
+  - `Anti Gravity:` — manual commits by the user (use `git commit -m "Anti Gravity: <description>"`)

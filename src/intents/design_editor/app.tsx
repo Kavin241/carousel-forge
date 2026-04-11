@@ -18,7 +18,7 @@ import type { DesignSystemPayload } from "../../lib/types";
 import { MASTER_TEMPLATES } from "../../lib/templates";
 import * as styles from "./app.css";
 
-type Status = "idle" | "generating" | "applying" | "done" | "error";
+type Status = "idle" | "generating" | "applying" | "generated" | "done" | "error";
 
 export function App() {
   const [script, setScript] = useState("");
@@ -47,7 +47,7 @@ export function App() {
       setPayload(parsedPayload);
       setPaletteIndex(0);
       setTypographyIndex(0);
-      setStatus("done");
+      setStatus("generated");
     } catch (e: any) {
       setStatus("error");
       setErrorMessage(e.message || "Unknown error during generation");
@@ -80,6 +80,7 @@ export function App() {
   };
 
   const isLoading = status === "generating" || status === "applying";
+  const wasApplied = status === "done";
   const templateKeys = Object.keys(MASTER_TEMPLATES);
 
   return (
@@ -340,8 +341,8 @@ export function App() {
           </Rows>
         )}
 
-        {/* Success State */}
-        {status === "done" && payload && (
+        {/* Success State — only after Apply to Canvas, not after generation */}
+        {wasApplied && (
           <Alert tone="positive">Design applied! Check your canvas.</Alert>
         )}
       </Rows>
