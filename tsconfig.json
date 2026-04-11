@@ -1,7 +1,38 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["dom", "dom.iterable", "es2018", "es2019.array", "es2019.object", "es2019.string", "es2020.promise", "es2020.string"],
+    "types": ["node", "webpack-env"],
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "importHelpers": true,
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "rootDir": ".",
+    "outDir": "dist",
+    "strict": true,
+    "skipLibCheck": true,
+    "target": "ES2019",
+    "sourceMap": true,
+    "inlineSources": true,
+    "module": "ESNext",
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": "./",
+    "paths": {
+      "src/*": ["./src/*"]
+    }
+  },
+  "include": ["src/**/*", "webpack.config.ts"],
+  "exclude": ["node_modules", "dist"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
 }

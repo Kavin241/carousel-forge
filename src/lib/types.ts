@@ -1,30 +1,22 @@
-// The full design system Gemini returns
+export interface Palette {
+  background: string;
+  primary: string;
+  accent: string;
+  secondary: string;
+}
+
+export interface Typography {
+  heading: { fontFamily: string; fontWeight: '400' | '700' | '900'; letterSpacing: number };
+  body: { fontFamily: string; fontWeight: '400' | '500' | '700'; letterSpacing: number };
+  accent: { fontFamily: string; fontWeight: '400' | '500' | '700'; letterSpacing: number };
+}
+
+// The full design system
 export interface DesignSpec {
   vibe: string;
   vibeName: string;
-  palette: {
-    background: string;       // hex
-    primary: string;          // hex - main text colour
-    accent: string;           // hex - highlights, rules, tags
-    secondary: string;        // hex - body text, subtext
-  };
-  typography: {
-    heading: {
-      fontFamily: string;     // must be from CANVA_FREE_FONTS list
-      fontWeight: '400' | '700' | '900';
-      letterSpacing: number;  // em units, e.g. -0.02
-    };
-    body: {
-      fontFamily: string;
-      fontWeight: '400' | '500' | '700';
-      letterSpacing: number;
-    };
-    accent: {
-      fontFamily: string;     // used for labels, slide numbers
-      fontWeight: '400' | '500' | '700';
-      letterSpacing: number;
-    };
-  };
+  palette: Palette;
+  typography: Typography;
   backgroundStyle: 'solid' | 'gradient' | 'noise' | 'split';
   gradientConfig?: {
     angle: number;
@@ -89,14 +81,10 @@ export interface ExtractedTextBlock {
   height: number;
 }
 
-// Lock state for shuffle mechanic
-export interface LockState {
-  background: boolean;
-  typography: boolean;
-  accentColor: boolean;
-  layout: boolean;
-  graphicElements: boolean;
-  contentAngle: boolean;
+export interface DesignSystemPayload {
+  activeDesign: DesignSpec;
+  shuffleBanks: {
+    palettes: Palette[];
+    typographies: Typography[];
+  };
 }
-
-export type AppMode = 'restyle' | 'build';

@@ -1,157 +1,126 @@
 import { CANVA_FREE_FONTS } from './styleLibrary';
-import { LockState, DesignSpec, ExtractedSlide } from './types';
+import type { DesignSpec } from './types';
 
 const FONT_LIST = CANVA_FREE_FONTS.join(', ');
 
 const SYSTEM_CONTEXT = `
-You are CarouselForge, an expert social media carousel designer specialising in educational content for Instagram, TikTok, and LinkedIn (all 1:1 format, 1080x1080px).
+You are CarouselForge, an expert graphic designer and copywriter for educational social media material.
 
-You have deep knowledge of current viral carousel design trends from 2024-2025:
-- Bold editorial typography with extreme size contrast
-- Dark backgrounds with single neon or pastel accent
-- Authentic "notes app" and "raw screenshot" aesthetics
-- Layered geometric shapes as background decoration
-- Clean whitespace with one dominant typographic statement per slide
+CRITICAL JSON RULES:
+Your output must ALWAYS be pure, valid JSON. No markdown fences. No explanations.
 
-Your output must ALWAYS be valid JSON matching the DesignSpec interface. No preamble, no explanation, no markdown fences. Pure JSON only.
-
-CRITICAL RULES:
-1. Fonts must ONLY come from this list: ${FONT_LIST}
-2. All positions are percentages (0-100) of a 1080x1080 canvas
-3. Slide count must be between 6 and 8
-4. Slide types must follow this sequence: hook → point(s) → elaboration(s) → callout → cta
-5. The hook slide heading must be a scroll-stopper (provocative, surprising, or bold)
-6. Every slide must feel complete at a glance — no slide should require reading another slide to make sense
-7. Font sizes: heading 48-96px, body 20-34px, label 14-18px
-8. Leave generous padding — no text should be within 8% of any canvas edge
+--- THE GRAPHIC DESIGN RULEBOOK ---
+You operate in a 100x100 percentage layout grid.
+1. THE ALIGNMENT GRID
+   - If textAlign is "left": headingPosition.x, bodyPosition.x MUST BE EXACTLY EQUAL.
+   - If textAlign is "center": x MUST BE EXACTLY EQUAL to (100 - width) / 2.
+2. NO-OVERLAP VERTICAL RHYTHM
+   - Top-down visual hierarchy:
+     * Label -> Y: 10 to 12
+     * Heading -> Y MUST be at least Label Y + 10.
+     * Body -> Y MUST be at least Heading Y + 30 (to allow text to wrap).
+   - Keep CTAs near the bottom but above the edge (Y: 75-85).
+3. WHITESPACE
+   - Never let width exceed 84. Keep text constrained.
+   - Never place any text element with Y < 8 or Y > 92.
+4. TYPOGRAPHY
+   - Heading size: 54-86. Body size: 22-38. Label: 14-18.
+5. CONTENT FLOW
+   - Slide count must be 6 to 8. Sequence: hook → context → points → cta.
 `;
 
 export function buildDesignPrompt(params: {
-  mode: 'build' | 'restyle';
   script: string | null;
   vibePrompt: string | null;
-  existingSlides: ExtractedSlide[] | null;
-  lockedElements: LockState;
-  currentSpec: DesignSpec | null;
-  shuffleTarget: keyof LockState | 'all' | null;
+  baseTemplate: DesignSpec | null;
 }): string {
-  const { mode, script, vibePrompt, existingSlides, lockedElements, currentSpec, shuffleTarget } = params;
+  const { script, vibePrompt, baseTemplate } = params;
 
   let prompt = SYSTEM_CONTEXT + '\n\n';
 
-  // --- Content source ---
-  if (mode === 'restyle' && existingSlides) {
-    const slideSummary = existingSlides
-      .filter(s => s.include)
-      .map(s => {
-        const texts = s.textBlocks.map(t => `  - "${t.text}" (${t.isHeading ? 'heading' : 'body'})`).join('\n');
-        return `Page ${s.pageIndex + 1}:\n${texts}`;
-      }).join('\n\n');
-
-    prompt += `MODE: RESTYLE
-The user has an existing carousel with this content. Do NOT change the text. Use it exactly as provided for the slide content.
-
-EXISTING CONTENT:
-${slideSummary}
-
-`;
+  // Content source
+  if (script) {
+    prompt += `USER SCRIPT / CONTENT:\n"${script}"\n\nInterpret this and generate 6-8 logical slides. The narrative should flow naturally.\n\n`;
   } else {
-    prompt += `MODE: BUILD\n`;
-    if (script) {
-      prompt += `USER SCRIPT / REFERENCE:
-"${script}"
-
-Interpret this as: a full slide-by-slide script if it contains line breaks or numbered points, or a single topic reference if it is a paragraph. Generate 6-8 logical slides from it. The narrative should flow naturally: hook → context → key points → insight → call to action.
-
-`;
-    } else {
-      prompt += `No script provided. Generate a compelling educational carousel on a topic that is currently trending for expat lifestyle, relocation, international living, or cultural adaptation content. Make the hook impossible to scroll past.
-
-`;
-    }
+    prompt += `No script provided. Generate a compelling educational carousel on a trending topic for professionals. Make the hook impossible to scroll past.\n\n`;
   }
 
-  // --- Vibe / style direction ---
-  if (vibePrompt) {
-    prompt += `STYLE DIRECTION FROM USER:
+  // Master Template Override vs Custom Vibe
+  if (baseTemplate) {
+    prompt += `MASTER TEMPLATE OVERRIDE:
+The user has selected a strict template preset. You MUST USE EXACTLY these design values for the activeDesign:
+- Palette: ${JSON.stringify(baseTemplate.palette)}
+- Typography: ${JSON.stringify(baseTemplate.typography)}
+- BackgroundStyle: "${baseTemplate.backgroundStyle}"
+- LayoutStyle: "${baseTemplate.layoutStyle}"
+- GraphicElements: ${JSON.stringify(baseTemplate.graphicElements)}
+
+DO NOT alter these values for the activeDesign. Your job is ONLY to generate the text content ("slides") so that it fits beautifully into these coordinates. However, you MUST still generate 5 alternate functional palettes and 3 alternate typographies in the shuffleBanks that harmonise with this template's vibe.
+
+`;
+  } else if (vibePrompt) {
+    prompt += `STYLE DIRECTION:
 "${vibePrompt}"
-Let this guide your aesthetic choices. Interpret it liberally.
+You must design a beautifully cohesive visual layout, typography system (using ONLY fonts from: ${FONT_LIST}), and color palette that matches this vibe perfectly.
 
 `;
   } else {
-    prompt += `No style direction given. Choose the aesthetic you judge best fits the content tone.
-
-`;
+    prompt += `No style direction or template given. Choose a stunning, premium aesthetic (e.g. minimalist dark mode, or vibrant brutalism).\n\n`;
   }
 
-  // --- Locked elements (shuffle mode) ---
-  if (currentSpec && shuffleTarget && shuffleTarget !== 'all') {
-    prompt += `PARTIAL SHUFFLE MODE:
-The user is happy with some elements. Keep these EXACTLY as specified:
+  // Output format
+  prompt += `OUTPUT FORMAT:
+Return only a single valid JSON object matching this DesignSystemPayload interface:
 
-`;
-    if (lockedElements.background) {
-      prompt += `- Background: keep backgroundStyle "${currentSpec.backgroundStyle}", palette.background "${currentSpec.palette.background}"\n`;
-      if (currentSpec.gradientConfig) prompt += `  gradientConfig: ${JSON.stringify(currentSpec.gradientConfig)}\n`;
-    }
-    if (lockedElements.typography) {
-      prompt += `- Typography: keep exact fonts and weights: ${JSON.stringify(currentSpec.typography)}\n`;
-    }
-    if (lockedElements.accentColor) {
-      prompt += `- Accent colour: keep palette.accent "${currentSpec.palette.accent}" and palette.secondary "${currentSpec.palette.secondary}"\n`;
-    }
-    if (lockedElements.layout) {
-      prompt += `- Layout style: keep layoutStyle "${currentSpec.layoutStyle}"\n`;
-    }
-    if (lockedElements.graphicElements) {
-      prompt += `- Graphic elements: keep graphicElements array exactly: ${JSON.stringify(currentSpec.graphicElements)}\n`;
-    }
-    if (lockedElements.contentAngle && mode === 'build') {
-      prompt += `- Content angle: keep contentAngle "${currentSpec.contentAngle}" — regenerate slides with this same narrative framing\n`;
-    }
-    prompt += `\nOnly regenerate the unlocked elements. Make sure the result is still cohesive.\n\n`;
-  }
-
-  // --- Output format ---
-  prompt += `OUTPUT: Return only a single valid JSON object matching this exact structure:
 {
-  "vibe": "snake_case_vibe_id",
-  "vibeName": "Human Readable Name",
-  "palette": { "background": "#hex", "primary": "#hex", "accent": "#hex", "secondary": "#hex" },
-  "typography": {
-    "heading": { "fontFamily": "Font Name", "fontWeight": "700", "letterSpacing": -0.02 },
-    "body": { "fontFamily": "Font Name", "fontWeight": "400", "letterSpacing": 0 },
-    "accent": { "fontFamily": "Font Name", "fontWeight": "400", "letterSpacing": 0.05 }
-  },
-  "backgroundStyle": "solid|gradient|noise|split",
-  "gradientConfig": { "angle": 135, "colorStop1": "#hex", "colorStop2": "#hex" },
-  "layoutStyle": "centered|left_heavy|asymmetric|top_anchored",
-  "graphicElements": [
-    { "type": "element_type", "position": { "x": 0, "y": 0, "width": 20 }, "color": "accent", "opacity": 0.8, "size": 1 }
-  ],
-  "slides": [
-    {
-      "index": 0,
-      "type": "hook",
-      "heading": "The heading text",
-      "body": "Body text or null",
-      "label": "Label text or null",
-      "layout": {
-        "headingPosition": { "x": 8, "y": 30, "width": 84 },
-        "bodyPosition": { "x": 8, "y": 62, "width": 84 },
-        "labelPosition": { "x": 8, "y": 20, "width": 50 },
-        "headingFontSize": 72,
-        "bodyFontSize": 24,
-        "textAlign": "left"
+  "activeDesign": {
+    "vibe": "snake_case_vibe_id",
+    "vibeName": "Human Readable Name",
+    "palette": { "background": "#hex", "primary": "#hex", "accent": "#hex", "secondary": "#hex" },
+    "typography": {
+      "heading": { "fontFamily": "Font Name", "fontWeight": "700", "letterSpacing": -0.02 },
+      "body": { "fontFamily": "Font Name", "fontWeight": "400", "letterSpacing": 0 },
+      "accent": { "fontFamily": "Font Name", "fontWeight": "400", "letterSpacing": 0.05 }
+    },
+    "backgroundStyle": "solid|gradient|noise|split",
+    "gradientConfig": { "angle": 135, "colorStop1": "#hex", "colorStop2": "#hex" },
+    "layoutStyle": "centered|left_heavy|asymmetric|top_anchored",
+    "graphicElements": [
+      { "type": "element_type", "position": { "x": 0, "y": 0, "width": 20 }, "color": "accent", "opacity": 0.8, "size": 1 }
+    ],
+    "slides": [
+      {
+        "index": 0,
+        "type": "hook",
+        "heading": "The heading text",
+        "body": "Body text or null",
+        "label": "Label text or null",
+        "layout": {
+          "headingPosition": { "x": 8, "y": 30, "width": 84 },
+          "bodyPosition": { "x": 8, "y": 62, "width": 84 },
+          "labelPosition": { "x": 8, "y": 20, "width": 50 },
+          "headingFontSize": 72,
+          "bodyFontSize": 24,
+          "textAlign": "left"
+        }
       }
-    }
-  ],
-  "contentAngle": "Brief description of the narrative approach",
-  "trendNote": "Current design trend this draws from"
+    ],
+    "contentAngle": "Brief description",
+    "trendNote": "Current design trend"
+  },
+  "shuffleBanks": {
+    "palettes": [
+      { "background": "#hex", "primary": "#hex", "accent": "#hex", "secondary": "#hex" }
+    ],
+    "typographies": [
+      { /* same shape as activeDesign.typography */ }
+    ]
+  }
 }
 
-gradientConfig is only required when backgroundStyle is "gradient". Otherwise omit it.
-graphicElements array must have 1 to 4 items.
+The 'shuffleBanks.palettes' array MUST contain exactly 5 different cohesive palette options matching the vibe.
+The 'shuffleBanks.typographies' array MUST contain exactly 3 different cohesive typography options matching the vibe.
+DO NOT wrap the response in markdown \`\`\`json blocks.
 `;
 
   return prompt;

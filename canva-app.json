@@ -1,4 +1,9 @@
 {
+  "intent": {
+    "design_editor": {
+      "enrolled": true
+    }
+  },
   "runtime": {
     "permissions": [
       {

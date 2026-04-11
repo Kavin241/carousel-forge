@@ -2,8 +2,7 @@ import "@canva/app-ui-kit/styles.css";
 import type { DesignEditorIntent } from "@canva/intents/design";
 import { AppUiProvider } from "@canva/app-ui-kit";
 import { createRoot } from "react-dom/client";
-import { App } from "../../App";
-import "../../styles/panel.css";
+import { App } from "./app";
 
 async function render() {
   const root = createRoot(document.getElementById("root") as Element);
@@ -11,9 +10,13 @@ async function render() {
   root.render(
     <AppUiProvider>
       <App />
-    </AppUiProvider>
+    </AppUiProvider>,
   );
 }
 
 const designEditor: DesignEditorIntent = { render };
 export default designEditor;
+
+if (module.hot) {
+  module.hot.accept("./app", render);
+}
